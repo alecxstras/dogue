@@ -12,16 +12,21 @@ export async function GET() {
 
   const userId = session.user.id;
 
-  const guessedPetIds = await prisma.guess
-    .findMany({ where: { userId }, select: { petId: true } })
-    .then((guesses) => guesses.map((g) => g.petId));
+  const [guessedPetIds, blockedUserIds] = await Promise.all([
+    prisma.guess
+      .findMany({ where: { userId }, select: { petId: true } })
+      .then((guesses) => guesses.map((g) => g.petId)),
+    prisma.block
+      .findMany({ where: { blockerId: userId }, select: { blockedId: true } })
+      .then((blocks) => blocks.map((b) => b.blockedId)),
+  ]);
 
-  const totalEligible = await prisma.pet.count({
-    where: {
-      ownerId: { not: userId },
-      id: { notIn: guessedPetIds },
-    },
-  });
+  const where = {
+    ownerId: { not: userId, notIn: blockedUserIds },
+    id: { notIn: guessedPetIds },
+  };
+
+  const totalEligible = await prisma.pet.count({ where });
 
   if (totalEligible === 0) {
     return NextResponse.json({ pet: null });
@@ -30,17 +35,15 @@ export async function GET() {
   const skip = Math.floor(Math.random() * totalEligible);
 
   const pet = await prisma.pet.findFirst({
-    where: {
-      ownerId: { not: userId },
-      id: { notIn: guessedPetIds },
-    },
+    where,
     select: {
       id: true,
+      ownerId: true,
       imageUrl: true,
       guessCount: true,
       correctGuessCount: true,
-      owner: { select: { name: true, image: true } },
-      // 'name' intentionally excluded
+      owner: { select: { name: true, username: true, image: true } },
+      // 'name' (pet name) intentionally excluded
     },
     skip,
   });

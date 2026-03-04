@@ -57,12 +57,17 @@ model User {
   emailVerified DateTime? @map("email_verified")
   image         String?
   passwordHash  String?   @map("password_hash")
+  username      String?   @unique
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  accounts Account[]
-  sessions Session[]
-  pets     Pet[]
-  guesses  Guess[]
+  accounts  Account[]
+  sessions  Session[]
+  pets      Pet[]
+  guesses   Guess[]
+  blocks    Block[]  @relation("BlockingUser")
+  blockedBy Block[]  @relation("BlockedUser")
+  reports   Report[] @relation("Reporter")
+  reported  Report[] @relation("Reported")
 
   @@map("users")
 }
@@ -76,8 +81,9 @@ model Pet {
   guessCount        Int      @default(0) @map("guess_count")
   correctGuessCount Int      @default(0) @map("correct_guess_count")
 
-  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   guesses Guess[]
+  reports Report[]
 
   @@map("pets")
 }
@@ -96,4 +102,32 @@ model Guess {
 
   @@unique([userId, petId])
   @@map("guesses")
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String   @map("blocker_id")
+  blockedId String   @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  blocker User @relation("BlockingUser", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockedUser",  fields: [blockedId],  references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
+
+model Report {
+  id             String   @id @default(cuid())
+  reporterId     String   @map("reporter_id")
+  reportedUserId String?  @map("reported_user_id")
+  reportedPetId  String?  @map("reported_pet_id")
+  reason         String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  reporter     User  @relation("Reporter", fields: [reporterId],     references: [id], onDelete: Cascade)
+  reportedUser User? @relation("Reported", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  reportedPet  Pet?  @relation(             fields: [reportedPetId],  references: [id], onDelete: SetNull)
+
+  @@map("reports")
 }

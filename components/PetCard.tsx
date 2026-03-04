@@ -3,13 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { GuessForm } from "./GuessForm";
+import { ReportButton } from "./ReportButton";
 
 type Pet = {
   id: string;
+  ownerId: string;
   imageUrl: string;
   guessCount: number;
   correctGuessCount: number;
-  owner: { name: string | null; image: string | null };
+  owner: { name: string | null; username: string | null; image: string | null };
 };
 
 type GuessResult = {
@@ -54,6 +56,8 @@ export function PetCard() {
     );
   }
 
+  const ownerDisplay = pet.owner.username ?? pet.owner.name ?? "Anonymous";
+
   return (
     <div className="max-w-sm mx-auto">
       <div className="rounded-2xl overflow-hidden shadow-md bg-white">
@@ -69,8 +73,11 @@ export function PetCard() {
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <span>Posted by {pet.owner.name ?? "Anonymous"}</span>
-            <span>{pet.guessCount} guesses · {pet.correctGuessCount} correct</span>
+            <span>Posted by {ownerDisplay}</span>
+            <div className="flex items-center gap-2">
+              <span>{pet.guessCount} guesses · {pet.correctGuessCount} correct</span>
+              <ReportButton petId={pet.id} reportedUserId={pet.ownerId} />
+            </div>
           </div>
 
           {result ? (

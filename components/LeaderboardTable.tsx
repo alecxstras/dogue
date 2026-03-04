@@ -1,5 +1,8 @@
+import { BlockButton } from "./BlockButton";
+
 type Entry = {
   rank: number;
+  userId: string;
   name: string;
   image?: string | null;
   totalPoints: number;
@@ -7,7 +10,13 @@ type Entry = {
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-export function LeaderboardTable({ entries }: { entries: Entry[] }) {
+export function LeaderboardTable({
+  entries,
+  currentUserId,
+}: {
+  entries: Entry[];
+  currentUserId?: string;
+}) {
   if (entries.length === 0) {
     return (
       <p className="text-center text-gray-500 py-8">
@@ -38,6 +47,9 @@ export function LeaderboardTable({ entries }: { entries: Entry[] }) {
           </div>
           <span className="flex-1 font-medium text-gray-800">{entry.name}</span>
           <span className="font-bold text-orange-500 text-lg">{entry.totalPoints} pts</span>
+          {currentUserId && entry.userId !== currentUserId && (
+            <BlockButton userId={entry.userId} />
+          )}
         </div>
       ))}
     </div>
